@@ -926,6 +926,8 @@ struct usart_module {
 	volatile enum status_code rx_status;
 	/** Holds the status of the ongoing or last write operation */
 	volatile enum status_code tx_status;
+	/** USER-ADDED:: Pointer to Object Holder **/
+	void* object_instance_pointer;
 #  endif
 #endif
 };

@@ -79,8 +79,10 @@ void _usart_interrupt_handler(
  */
 void usart_register_callback(
 		struct usart_module *const module,
-		void* callback_func,
+		usart_callback_t callback_func,
 		enum usart_callback callback_type);
+
+void usart_register_callback_method( void );
 
 void usart_unregister_callback(
 		struct usart_module *module,

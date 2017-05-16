@@ -165,7 +165,7 @@ enum status_code _usart_read_buffer(
  */	// TODO usart_callback_t callback_func
 void usart_register_callback(
 		struct usart_module *const module,
-		void* callback_func,
+		usart_callback_t callback_func,
 		enum usart_callback callback_type)
 {
 	/* Sanity check arguments */
@@ -177,6 +177,10 @@ void usart_register_callback(
 
 	/* Set the bit corresponding to the callback_type */
 	module->callback_reg_mask |= (1 << callback_type);
+}
+
+void usart_register_callback_method( void ) {
+
 }
 
 /**

@@ -10,6 +10,8 @@
 	/* Initialize the SAM system */
 	system_init();
 
+	ser_ethernet eth_obj(zpdc_sercom0_configuration);
+
 	/* Replace with you application code */
 	vTaskStartScheduler();
  }

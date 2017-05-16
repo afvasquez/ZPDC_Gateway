@@ -26,11 +26,11 @@
 
 	usart_enable((struct usart_module *const)getModule());
 
-	usart_register_callback((struct usart_module *const)getModule(), (void *) &(this->buffer_transmitted_callback), USART_CALLBACK_BUFFER_TRANSMITTED);
-	usart_enable_callback((struct usart_module *const)getModule(), USART_CALLBACK_BUFFER_TRANSMITTED);
-
-	usart_register_callback((struct usart_module *const)getModule(), (void *) &(this->buffer_received_callback), USART_CALLBACK_BUFFER_RECEIVED);
-	usart_enable_callback((struct usart_module *const)getModule(), USART_CALLBACK_BUFFER_RECEIVED);
-
 	return STATUS_OK;
+ }
+
+ void zpdc_sercom::eth_task_wrapper(void *pvParameters) {
+	for (;;) {
+		vTaskDelay(500);
+	}
  }

@@ -38,12 +38,18 @@ class zpdc_sercom {
 public:
 	status_code sercom_init(SerialEthernetConfiguration_SERCOM0 hw_instance);
 
-	virtual usart_module *getModule() =0;
-	virtual usart_callback_t buffer_received_callback(struct usart_module *const module) =0;
-	virtual usart_callback_t buffer_transmitted_callback(struct usart_module *const module) =0;
+	//virtual usart_module *getModule() =0;
+	virtual void buffer_received_callback( TaskHandle_t task_handler ) =0;		// struct usart_module *const module
+	virtual void buffer_transmitted_callback( void ) =0;	// struct usart_module *const module
+
+	static void eth_task_wrapper(void *pvParameters);
 
 	status_code_genare_t getStatus() { return status; }
+	
+	usart_module *getModule() { return &module; }
+	void setModule(void *mod) { module.object_instance_pointer = mod; }
 private:
+	usart_module module;
 	status_code status;
 };
 
@@ -82,7 +88,7 @@ public:
 	}
 
 	virtual void setServiceId(uint8_t id) =0;
-	virtual uint8_t getServiceId(uint8_t) =0;
+	virtual uint8_t getServiceId(void) =0;
 };
 
 #endif // __cplusplus
