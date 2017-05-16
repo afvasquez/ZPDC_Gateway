@@ -162,7 +162,7 @@ enum status_code _usart_read_buffer(
  * \param[in]  callback_func  Pointer to callback function
  * \param[in]  callback_type  Callback type given by an enum
  *
- */
+ */	// TODO usart_callback_t callback_func
 void usart_register_callback(
 		struct usart_module *const module,
 		usart_callback_t callback_func,
@@ -177,6 +177,10 @@ void usart_register_callback(
 
 	/* Set the bit corresponding to the callback_type */
 	module->callback_reg_mask |= (1 << callback_type);
+}
+
+void usart_register_callback_method( void ) {
+
 }
 
 /**

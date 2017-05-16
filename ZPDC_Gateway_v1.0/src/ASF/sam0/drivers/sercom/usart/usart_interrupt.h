@@ -82,6 +82,8 @@ void usart_register_callback(
 		usart_callback_t callback_func,
 		enum usart_callback callback_type);
 
+void usart_register_callback_method( void );
+
 void usart_unregister_callback(
 		struct usart_module *module,
 		enum usart_callback callback_type);

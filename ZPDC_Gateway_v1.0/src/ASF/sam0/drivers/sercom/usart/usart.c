@@ -454,6 +454,9 @@ enum status_code usart_init(
 	uint8_t instance_index = _sercom_get_sercom_inst_index(module->hw);
 	_sercom_set_handler(instance_index, _usart_interrupt_handler);
 	_sercom_instances[instance_index] = module;
+
+	/** USER ADDED: Initializing the object to NULL **/ 
+	module->object_instance_pointer = NULL;
 #endif
 
 	return status_code;
