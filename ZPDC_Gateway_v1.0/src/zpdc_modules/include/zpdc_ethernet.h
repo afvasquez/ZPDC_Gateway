@@ -38,6 +38,10 @@ class ser_ethernet : public zpdc_sercom , sercom_resource_manager, Task
 {
 public:
 	const constexpr static char* NAME = "ETHERNET\0";
+	const constexpr static char* CLRS = "\e[2J\e[3J\e[H\0";
+	const constexpr static char* EDGE = "#######################################################\0";
+	const constexpr static char* BANN = "#            ZPDC GATEWAY INTERFACE V0.1.1            #\0";
+	const constexpr static char* KEYS = ">> \0";
 
 	ser_ethernet(SerialEthernetConfiguration_SERCOM0 ser_config);
 
@@ -56,12 +60,22 @@ public:
 
 	void task(void);
 
+		// I/O Functionality
+	SemaphoreHandle_t xTxMutex;
+	uint8_t rx_buffer_index;
+	void print(const char* string_to_print);
+	void printnl(const char* string_to_print);
+
+
 		// Utility Methods
 	void setServiceId(uint8_t id) { service_id = id; }
 	uint8_t getServiceId() { return service_id; }
 private:
-	uint8_t rx_buffer[16];
+	uint8_t rx_buffer[64];
+	uint8_t tx_buffer[64];
 	uint8_t service_id;
+
+	inline void send(uint8_t length) { usart_write_buffer_job((struct usart_module *const)getModule(), tx_buffer, length); }
 };
 
 #endif // __cplusplus

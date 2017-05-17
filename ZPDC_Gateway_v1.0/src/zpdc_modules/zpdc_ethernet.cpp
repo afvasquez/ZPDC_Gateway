@@ -7,10 +7,13 @@
  #include <asf.h>
 
  ser_ethernet::ser_ethernet (SerialEthernetConfiguration_SERCOM0 ser_config) {
-	for ( uint8_t i=0; i<16; i++ )
+	for ( uint8_t i=0; i<64; i++ )
 		rx_buffer[i] = '\0';
+	rx_buffer_index = 0;
 
 	if ( register_service() == REGISTER_OK ) {
+		xTxMutex = xSemaphoreCreateMutex();
+
 		sercom_init(ser_config);
 		ethernet_init();
 
@@ -32,23 +35,64 @@
 
  void ser_ethernet::buffer_received_callback(TaskHandle_t task_handler) {
 	BaseType_t xYieldRequired;
-	xYieldRequired = xTaskResumeFromISR(task_handler);
 
-	portYIELD_FROM_ISR(xYieldRequired);
+	// DEBUG, find the end of the transmission
+	if ( rx_buffer[rx_buffer_index] == '\n' ) {
+		xYieldRequired = xTaskResumeFromISR(task_handler);
+		portYIELD_FROM_ISR(xYieldRequired);
+	} else {
+		rx_buffer_index++;
+		usart_read_buffer_job((struct usart_module *const)getModule(), &rx_buffer[rx_buffer_index], 1);
+	}
  }
-
  void ser_ethernet::buffer_transmitted_callback(void) {
+	BaseType_t xHigherPriorityWoken;
 
+	xSemaphoreGiveFromISR(xTxMutex, &xHigherPriorityWoken);
+
+	portYIELD_FROM_ISR( xHigherPriorityWoken );
  }
 
 void ser_ethernet::task(void) {
-	rx_buffer[0] = 'A';
-	//usart_write_buffer_job(u_module, rx_buffer, 1);
-	usart_read_buffer_job((struct usart_module *const)getModule(), rx_buffer, 1);
+	rx_buffer_index = 0;
 
+	print(CLRS);
+	printnl(EDGE);
+	printnl(BANN);
+	printnl(EDGE);
+	print(KEYS);
+
+	usart_read_buffer_job((struct usart_module *const)getModule(), &rx_buffer[rx_buffer_index], 1);
 	for (;;) {
 		vTaskSuspend(handle);
-		usart_write_buffer_job((struct usart_module *const)getModule(), rx_buffer, 1);
-		usart_read_buffer_job((struct usart_module *const)getModule(), rx_buffer, 1);
+		xSemaphoreTake(xTxMutex, portMAX_DELAY);
+		usart_write_buffer_job((struct usart_module *const)getModule(), rx_buffer, rx_buffer_index + 1);
+		print(KEYS);
+
+		rx_buffer_index = 0;
+		usart_read_buffer_job((struct usart_module *const)getModule(), &rx_buffer[rx_buffer_index], 1);
 	}
+}
+
+// SERIAL ETHERNET UTILITIES
+void ser_ethernet::print(const char* string_to_print) {
+	uint8_t length_counter = 0;
+
+	xSemaphoreTake(xTxMutex, portMAX_DELAY);
+	while( (*(string_to_print + length_counter) != '\0') && (length_counter < 64) ) {
+		tx_buffer[length_counter] = *(string_to_print + length_counter);
+		length_counter++;
+	}
+
+	// TODO: A string length check to be implemented
+	send(length_counter);
+}
+
+void ser_ethernet::printnl(const char* string_to_print) {
+	print(string_to_print);
+
+	xSemaphoreTake(xTxMutex, portMAX_DELAY);
+	tx_buffer[0] = '\r';
+	tx_buffer[1] = '\n';
+	send(2);
 }
