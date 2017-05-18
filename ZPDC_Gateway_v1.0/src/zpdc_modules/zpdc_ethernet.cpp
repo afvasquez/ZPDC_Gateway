@@ -19,7 +19,7 @@
 
 		setModule(this);
 
-		t_init();
+		t_init("ETH", 1);	// Task-Thread Initialization
 	}
  }
 

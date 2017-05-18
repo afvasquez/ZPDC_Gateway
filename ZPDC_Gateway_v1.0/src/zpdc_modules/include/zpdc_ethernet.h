@@ -29,34 +29,13 @@ const static CommandDictionary Commands[] = {
 
 class zpdc_sercom;
 
-class Task {
-public:
-	BaseType_t t_init(void) {
-		return xTaskCreate(
-					&taskfun,
-					"ETH",
-					configMINIMAL_STACK_SIZE,
-					this,
-					tskIDLE_PRIORITY + 1,
-					&handle);
-	}
-
-	virtual void task(void) =0;
-	static void taskfun(void *parm) {
-		((Task*)parm)->task();
-		vTaskDelete(NULL);
-	}
-
-	TaskHandle_t handle;
-};
-
-class ser_ethernet : public zpdc_sercom , sercom_resource_manager, Task
+class ser_ethernet : public Task, public zpdc_sercom , sercom_resource_manager
 {
 public:
 	const constexpr static char* NAME = "ETHERNET\0";
 	const constexpr static char* CLRS = "\e[2J\e[3J\e[H\0";
 	const constexpr static char* EDGE = "#######################################################\0";
-	const constexpr static char* BANN = "#            ZPDC GATEWAY INTERFACE V0.1.1            #\0";
+	const constexpr static char* BANN = "#            ZPDC GATEWAY INTERFACE V0.2.3            #\0";
 	const constexpr static char* KEYS = ">> \0";
 
 	ser_ethernet(SerialEthernetConfiguration_SERCOM0 ser_config);
