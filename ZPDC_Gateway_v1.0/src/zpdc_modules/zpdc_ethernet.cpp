@@ -54,6 +54,7 @@
  }
 
 void ser_ethernet::task(void) {
+	uint8_t rx_command;
 	rx_buffer_index = 0;
 
 	print(CLRS);
@@ -65,13 +66,51 @@ void ser_ethernet::task(void) {
 	usart_read_buffer_job((struct usart_module *const)getModule(), &rx_buffer[rx_buffer_index], 1);
 	for (;;) {
 		vTaskSuspend(handle);
-		xSemaphoreTake(xTxMutex, portMAX_DELAY);
-		usart_write_buffer_job((struct usart_module *const)getModule(), rx_buffer, rx_buffer_index + 1);
-		print(KEYS);
+		
+		rx_command = getCommandID();
+
+
+		//xSemaphoreTake(xTxMutex, portMAX_DELAY);
+
+		switch (rx_command) {
+			case 1:
+				print(CLRS);
+				printnl(EDGE);
+				printnl(BANN);
+				printnl(EDGE);
+				print(KEYS);
+			break;
+			case 2:
+				printnl("Thread started on background...");
+			break;
+			case 3:
+				printnl("ZPDC Gateway v0.1.1. May 2017");
+			break;
+			default:
+				printnl("Command not found!");
+			break;
+		}
+
+		//printnl(Commands[rx_command].command);
+		if (rx_command != 1) {
+			printnl(" ");
+			print(KEYS);
+		}
 
 		rx_buffer_index = 0;
 		usart_read_buffer_job((struct usart_module *const)getModule(), &rx_buffer[rx_buffer_index], 1);
 	}
+}
+
+uint8_t ser_ethernet::getCommandID(void) {
+	rx_buffer_index--;	// Omit Line endings
+	for (uint8_t i=0; i<3; i++) {	// Iterate through all the available commands
+		for (uint8_t j=0; j<rx_buffer_index && rx_buffer_index == Commands[i].cmd_length; j++)
+			if (rx_buffer[j] == Commands[i].command[j]) {
+				if ( j == rx_buffer_index - 1) return Commands[i].cmd_id;
+			} else j = rx_buffer_index;
+	}
+	return 0;
 }
 
 // SERIAL ETHERNET UTILITIES

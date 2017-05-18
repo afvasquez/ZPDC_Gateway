@@ -11,6 +11,22 @@
 #ifdef __cplusplus
 
 #include "zpdc_sercom.h"
+
+/********************** Dictionary Definitions **************************/
+typedef struct {
+	const uint8_t cmd_id;
+	const uint8_t num_args;
+	const uint8_t cmd_length;
+	const char *command;
+} CommandDictionary;
+
+const static CommandDictionary Commands[] = {
+	{1, 0, 7, "restart"},
+	{2, 0, 9, "resources"},
+	{3, 0, 7, "version"}
+};
+/************************************************************************/
+
 class zpdc_sercom;
 
 class Task {
@@ -76,6 +92,7 @@ private:
 	uint8_t service_id;
 
 	inline void send(uint8_t length) { usart_write_buffer_job((struct usart_module *const)getModule(), tx_buffer, length); }
+	uint8_t getCommandID(void);
 };
 
 #endif // __cplusplus
