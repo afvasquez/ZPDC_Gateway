@@ -719,6 +719,9 @@
     <Compile Include="src\zpdc_modules\include\zpdc_sercom.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\zpdc_modules\include\zpdc_system.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\zpdc_modules\utils\zpdc_can.cpp">
       <SubType>compile</SubType>
     </Compile>

@@ -6,10 +6,11 @@
  */ 
  #include <asf.h>
 
- ser_ethernet::ser_ethernet (SerialEthernetConfiguration_SERCOM0 ser_config) {
+ ser_ethernet::ser_ethernet (SerialEthernetConfiguration_SERCOM0 ser_config, uint16_t device_uid) {
 	for ( uint8_t i=0; i<64; i++ )
 		rx_buffer[i] = '\0';
 	rx_buffer_index = 0;
+	device_id = device_uid;
 
 	if ( register_service() == REGISTER_OK ) {
 		xTxMutex = xSemaphoreCreateMutex();
@@ -69,9 +70,6 @@ void ser_ethernet::task(void) {
 		
 		rx_command = getCommandID();
 
-
-		//xSemaphoreTake(xTxMutex, portMAX_DELAY);
-
 		switch (rx_command) {
 			case 1:
 				print(CLRS);
@@ -81,7 +79,12 @@ void ser_ethernet::task(void) {
 				print(KEYS);
 			break;
 			case 2:
-				printnl("Thread started on background...");
+				print("Device Unique ID\r\n[");
+				print((int16_t)(device_id >> 8));
+				print(".");
+				print((int16_t)(device_id & 0x00FF));
+				printnl("]");
+				//printnl("Thread started on background...");
 			break;
 			case 3:
 				printnl("ZPDC Gateway v0.1.1. May 2017");
@@ -125,6 +128,34 @@ void ser_ethernet::print(const char* string_to_print) {
 
 	// TODO: A string length check to be implemented
 	send(length_counter);
+}
+void ser_ethernet::print(int16_t value) {
+		// Negative sign
+	if (value < 0) {
+		value *= -1;
+		print("-");
+	}
+
+	xSemaphoreTake(xTxMutex, portMAX_DELAY);
+	bool isLeftZero = true;
+	uint16_t divider = 10000;
+	uint16_t index_iterator = 0;
+	while (divider > 0) {
+		if ((tx_buffer[index_iterator] = value / divider) > 0) { 
+			isLeftZero = false;
+			tx_buffer[index_iterator] += 48;	// To ASCII
+			index_iterator++;
+		} else if (!isLeftZero) {
+			tx_buffer[index_iterator] += 48;	// To ASCII
+			index_iterator++;
+		}
+
+		value %= divider;
+		divider /= 10;
+
+		if (divider == 0 && isLeftZero) tx_buffer[index_iterator++] = '0';
+	}
+	send(index_iterator);
 }
 
 void ser_ethernet::printnl(const char* string_to_print) {

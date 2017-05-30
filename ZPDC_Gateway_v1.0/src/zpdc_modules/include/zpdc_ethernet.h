@@ -38,7 +38,7 @@ public:
 	const constexpr static char* BANN = "#            ZPDC GATEWAY INTERFACE V0.2.3            #\0";
 	const constexpr static char* KEYS = ">> \0";
 
-	ser_ethernet(SerialEthernetConfiguration_SERCOM0 ser_config);
+	ser_ethernet(SerialEthernetConfiguration_SERCOM0 ser_config, uint16_t device_uid);
 
 	status_code ethernet_init(void);
 
@@ -58,9 +58,9 @@ public:
 		// I/O Functionality
 	SemaphoreHandle_t xTxMutex;
 	uint8_t rx_buffer_index;
+	void print(int16_t value);
 	void print(const char* string_to_print);
 	void printnl(const char* string_to_print);
-
 
 		// Utility Methods
 	void setServiceId(uint8_t id) { service_id = id; }
@@ -69,6 +69,7 @@ private:
 	uint8_t rx_buffer[64];
 	uint8_t tx_buffer[64];
 	uint8_t service_id;
+	uint16_t device_id;
 
 	inline void send(uint8_t length) { usart_write_buffer_job((struct usart_module *const)getModule(), tx_buffer, length); }
 	uint8_t getCommandID(void);
