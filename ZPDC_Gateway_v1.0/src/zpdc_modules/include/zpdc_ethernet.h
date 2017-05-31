@@ -2,7 +2,7 @@
  * zpdc_ethernet.h
  *
  * Created: 5/11/2017 1:52:39 PM
- *  Author: avasquez
+ *  Author: Andres Vasquez
  */ 
 
 
@@ -23,7 +23,8 @@ typedef struct {
 const static CommandDictionary Commands[] = {
 	{1, 0, 7, "restart"},
 	{2, 0, 9, "resources"},
-	{3, 0, 7, "version"}
+	{3, 0, 7, "version"},
+	{4, 0, 7, "candisc"}
 };
 /************************************************************************/
 
@@ -35,10 +36,10 @@ public:
 	const constexpr static char* NAME = "ETHERNET\0";
 	const constexpr static char* CLRS = "\e[2J\e[3J\e[H\0";
 	const constexpr static char* EDGE = "#######################################################\0";
-	const constexpr static char* BANN = "#            ZPDC GATEWAY INTERFACE V0.2.3            #\0";
+	const constexpr static char* BANN = "#            ZPDC GATEWAY INTERFACE V0.2.4            #\0";
 	const constexpr static char* KEYS = ">> \0";
 
-	ser_ethernet(SerialEthernetConfiguration_SERCOM0 ser_config, uint16_t device_uid);
+	ser_ethernet(SerialEthernetConfiguration_SERCOM0 ser_config, ZpdcSystem *system_module);
 
 	status_code ethernet_init(void);
 
@@ -69,7 +70,7 @@ private:
 	uint8_t rx_buffer[64];
 	uint8_t tx_buffer[64];
 	uint8_t service_id;
-	uint16_t device_id;
+	ZpdcSystem *system_data;
 
 	inline void send(uint8_t length) { usart_write_buffer_job((struct usart_module *const)getModule(), tx_buffer, length); }
 	uint8_t getCommandID(void);

@@ -12,11 +12,11 @@
 
 class Task {
 	public:
-	BaseType_t t_init(const char* name, uint8_t priority) {
+	BaseType_t t_init(const char* name, uint8_t priority, uint8_t stack_multiplier) {
 		return xTaskCreate(
 		&taskfun,
 		name,
-		configMINIMAL_STACK_SIZE,
+		configMINIMAL_STACK_SIZE * stack_multiplier,
 		this,
 		tskIDLE_PRIORITY + priority,
 		&handle);

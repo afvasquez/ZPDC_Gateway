@@ -8,18 +8,23 @@
 
  can_service* Object;
 
+ //struct can_module can_instance;
+
  int main(void) {
 	/* Initialize the SAM system */
 	system_init();
 
 	ZpdcSystem system_data;
-	ser_ethernet eth_obj(zpdc_sercom0_configuration, system_data.get_uid());
-	can_service can_obj(zpdc_can0_configuration, Object);
+
+	ser_ethernet eth_obj(zpdc_sercom0_configuration, &system_data);
+
+	can_service can_obj(zpdc_can0_configuration, &eth_obj, &system_data);
+	Object = &can_obj;
 
 	/* Replace with you application code */
 	vTaskStartScheduler();
  }
 
  void CAN0_Handler(void) {
-	(*Object).callback();
+	Object->callback();
  }

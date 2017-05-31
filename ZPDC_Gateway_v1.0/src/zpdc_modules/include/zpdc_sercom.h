@@ -42,8 +42,6 @@ public:
 	virtual void buffer_received_callback( TaskHandle_t task_handler ) =0;		// struct usart_module *const module
 	virtual void buffer_transmitted_callback( void ) =0;	// struct usart_module *const module
 
-	static void eth_task_wrapper(void *pvParameters);
-
 	status_code_genare_t getStatus() { return status; }
 	
 	usart_module *getModule() { return &module; }

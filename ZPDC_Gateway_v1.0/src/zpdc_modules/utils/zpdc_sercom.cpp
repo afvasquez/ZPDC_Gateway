@@ -28,9 +28,3 @@
 
 	return STATUS_OK;
  }
-
- void zpdc_sercom::eth_task_wrapper(void *pvParameters) {
-	for (;;) {
-		vTaskDelay(500);
-	}
- }

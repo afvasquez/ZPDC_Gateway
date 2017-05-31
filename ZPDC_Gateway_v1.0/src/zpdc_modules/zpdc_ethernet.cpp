@@ -6,11 +6,11 @@
  */ 
  #include <asf.h>
 
- ser_ethernet::ser_ethernet (SerialEthernetConfiguration_SERCOM0 ser_config, uint16_t device_uid) {
+ ser_ethernet::ser_ethernet (SerialEthernetConfiguration_SERCOM0 ser_config, ZpdcSystem *system_module) {
 	for ( uint8_t i=0; i<64; i++ )
 		rx_buffer[i] = '\0';
 	rx_buffer_index = 0;
-	device_id = device_uid;
+	system_data = system_module;
 
 	if ( register_service() == REGISTER_OK ) {
 		xTxMutex = xSemaphoreCreateMutex();
@@ -20,7 +20,7 @@
 
 		setModule(this);
 
-		t_init("ETH", 1);	// Task-Thread Initialization
+		t_init("ETH", 1, 1);	// Task-Thread Initialization
 	}
  }
 
@@ -80,21 +80,25 @@ void ser_ethernet::task(void) {
 			break;
 			case 2:
 				print("Device Unique ID\r\n[");
-				print((int16_t)(device_id >> 8));
+				print((int16_t)((system_data)->get_uid() >> 8));
 				print(".");
-				print((int16_t)(device_id & 0x00FF));
+				print((int16_t)((system_data)->get_uid() & 0x00FF));
 				printnl("]");
-				//printnl("Thread started on background...");
 			break;
 			case 3:
-				printnl("ZPDC Gateway v0.1.1. May 2017");
+				printnl("ZPDC Gateway v0.2.4. May 2017");
+			break;
+			case 4: {
+				uint32_t can_command = system_data->get_queue_parameter_value(CAN_DISCOVERY_REQUEST, 0, 0, 0);
+				xQueueSend(system_data->queue_to_can, &can_command, portMAX_DELAY);
+				vTaskSuspend(handle);
+			}
 			break;
 			default:
 				printnl("Command not found!");
 			break;
 		}
 
-		//printnl(Commands[rx_command].command);
 		if (rx_command != 1) {
 			printnl(" ");
 			print(KEYS);
@@ -107,7 +111,7 @@ void ser_ethernet::task(void) {
 
 uint8_t ser_ethernet::getCommandID(void) {
 	rx_buffer_index--;	// Omit Line endings
-	for (uint8_t i=0; i<3; i++) {	// Iterate through all the available commands
+	for (uint8_t i=0; i<4; i++) {	// Iterate through all the available commands
 		for (uint8_t j=0; j<rx_buffer_index && rx_buffer_index == Commands[i].cmd_length; j++)
 			if (rx_buffer[j] == Commands[i].command[j]) {
 				if ( j == rx_buffer_index - 1) return Commands[i].cmd_id;

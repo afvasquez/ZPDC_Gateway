@@ -32,6 +32,30 @@ public:
 			}
 		} else if ( result_code == STATUS_OK ) while ((uid = read_uid()) == 0xFFFF ) uid_setup();
 		else while (true) {  }	// LOCK if EEPROM error
+
+		queue_to_can = xQueueCreate(1, sizeof(uint32_t) );
+
+		struct port_config pin_output;
+		port_get_config_defaults(&pin_output);
+		pin_output.direction = PORT_PIN_DIR_OUTPUT;
+		port_pin_set_config(PIN_PA07, &pin_output);
+	}
+
+		// ETHERNET - CAN Queue
+	QueueHandle_t queue_to_can;
+
+	inline uint8_t get_queue_entry_parameter(uint32_t parm, uint8_t parm_num) {
+		return (uint8_t)((parm >> ((parm_num-1) * 8)) & 0xFF);
+	}
+
+	uint32_t get_queue_parameter_value(uint8_t cmd, uint8_t p3, uint8_t p2, uint8_t p1) {
+		uint32_t hold = (uint32_t) (cmd << 24);	// Push the command
+
+		if (p3 != 0) hold |= (uint32_t) (p3 << 16);
+		if (p2 != 0) hold |= (uint32_t) (p2 << 8);
+		if (p1 != 0) hold |= (uint32_t) (p3);
+
+		return hold;
 	}
 
 	uint16_t get_uid(void) { return uid; }
