@@ -22,6 +22,8 @@
 #define CAN_BUFFER_0				((uint8_t) 0)
 #define CAN_BUFFER_1				((uint8_t) 1)
 
+#define CAN_RX_FIFO_ID_SUBNET(value)	(uint8_t)((0x7FFul & ((value) >> (CAN_TX_ELEMENT_T0_STANDARD_ID_Pos + 7))))
+
 /************************************************************************/
 /*  TYPE DEFINITIONS FOR NETWORK DEVICE TABLE                           */
 /************************************************************************/
@@ -52,7 +54,6 @@ static can_module can0_instance;
 /************************************************************************/
 /* CAN MODULE OBJECT ABSTRACTION                                        */
 /************************************************************************/
-class can_service;
 
 class can_service : public Task {
 public:
@@ -65,11 +66,10 @@ public:
 	void task(void);
 
 	void callback(void);
-
-	//struct can_module *can_instance;
 private:
 	NetworkDevices network_devices[100];
 	uint8_t network_size;
+	QueueHandle_t queue_net_devices;
 	
 	struct can_rx_element_fifo_0 rx_element_fifo_0;
 	struct can_rx_element_fifo_0 rx_element_fifo_1;
@@ -87,7 +87,12 @@ private:
 	ser_ethernet *eth0;
 	// System Data
 	ZpdcSystem *system_data;
+
+	
+	inline void CancelTransmission(uint32_t buffer) { can_tx_cancel_request(&can0_instance, (uint32_t)(1 << buffer)); }
 };
+
+
 
 #endif
 #endif /* ZPDC_CAN_H_ */

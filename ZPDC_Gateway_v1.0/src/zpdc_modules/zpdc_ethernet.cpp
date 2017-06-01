@@ -86,7 +86,7 @@ void ser_ethernet::task(void) {
 				printnl("]");
 			break;
 			case 3:
-				printnl("ZPDC Gateway v0.2.4. May 2017");
+				printnl("ZPDC Gateway v0.3.4. June 2017");
 			break;
 			case 4: {
 				uint32_t can_command = system_data->get_queue_parameter_value(CAN_DISCOVERY_REQUEST, 0, 0, 0);
@@ -125,6 +125,7 @@ void ser_ethernet::print(const char* string_to_print) {
 	uint8_t length_counter = 0;
 
 	xSemaphoreTake(xTxMutex, portMAX_DELAY);
+
 	while( (*(string_to_print + length_counter) != '\0') && (length_counter < 64) ) {
 		tx_buffer[length_counter] = *(string_to_print + length_counter);
 		length_counter++;

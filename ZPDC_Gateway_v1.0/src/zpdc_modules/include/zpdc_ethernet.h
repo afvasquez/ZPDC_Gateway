@@ -36,7 +36,7 @@ public:
 	const constexpr static char* NAME = "ETHERNET\0";
 	const constexpr static char* CLRS = "\e[2J\e[3J\e[H\0";
 	const constexpr static char* EDGE = "#######################################################\0";
-	const constexpr static char* BANN = "#            ZPDC GATEWAY INTERFACE V0.2.4            #\0";
+	const constexpr static char* BANN = "#            ZPDC GATEWAY INTERFACE V0.3.4            #\0";
 	const constexpr static char* KEYS = ">> \0";
 
 	ser_ethernet(SerialEthernetConfiguration_SERCOM0 ser_config, ZpdcSystem *system_module);

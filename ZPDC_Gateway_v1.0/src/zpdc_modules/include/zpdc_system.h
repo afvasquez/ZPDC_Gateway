@@ -21,6 +21,7 @@ public:
 	ZpdcSystem() {
 		/* ---- Initialize the UID ---- */
 		uid = 0;
+		net_address = 0xFF;
 		enum status_code result_code = eeprom_emulator_init();
 
 		if ( result_code == STATUS_ERR_NO_MEMORY ) while (true) {  }
@@ -30,8 +31,10 @@ public:
 				result_code = eeprom_emulator_init();
 				if ( result_code != STATUS_ERR_BAD_FORMAT ) uid_setup();
 			}
-		} else if ( result_code == STATUS_OK ) while ((uid = read_uid()) == 0xFFFF ) uid_setup();
-		else while (true) {  }	// LOCK if EEPROM error
+		} else if ( result_code == STATUS_OK ) { 
+			while ((uid = read_uid()) == 0xFFFF ) uid_setup();
+			net_address = read_address();
+		} else while (true) {  }	// LOCK if EEPROM error
 
 		queue_to_can = xQueueCreate(1, sizeof(uint32_t) );
 
@@ -39,6 +42,8 @@ public:
 		port_get_config_defaults(&pin_output);
 		pin_output.direction = PORT_PIN_DIR_OUTPUT;
 		port_pin_set_config(PIN_PA07, &pin_output);
+		port_pin_set_config(PIN_PA03, &pin_output);
+		port_pin_set_config(PIN_PA04, &pin_output);
 	}
 
 		// ETHERNET - CAN Queue
@@ -59,8 +64,13 @@ public:
 	}
 
 	uint16_t get_uid(void) { return uid; }
+	uint8_t get_uid_high(void) { return (uint8_t)(uid >> 8); }
+	uint8_t get_uid_low(void) { return (uint8_t)(uid & 0xFF); }
+
+	uint8_t get_address(void) { return net_address; }
 private:
 	uint16_t uid;
+	uint8_t net_address;
 
 		// Remap a pseudo-unique ID by hashing a 128-bit value to 16-bit
 	void uid_setup(void) {
@@ -85,6 +95,11 @@ private:
 		uint8_t page_data[EEPROM_PAGE_SIZE];
 		eeprom_emulator_read_page(0, page_data);
 		return ((uint16_t)page_data[1] << 8) | (uint16_t)page_data[0];
+	}
+	uint8_t read_address(void) {
+		uint8_t page_data[EEPROM_PAGE_SIZE];
+		eeprom_emulator_read_page(0, page_data);
+		return (uint8_t)page_data[2];
 	}
 };
 
