@@ -13,6 +13,8 @@
 #include "zpdc_sercom.h"
 
 /********************** Dictionary Definitions **************************/
+#define CAN_DICTIONARY_LENGTH			5
+#define CAN_DICTIONARY_ARG_NOT_FOUND	(uint16_t)0xFFFF
 typedef struct {
 	const uint8_t cmd_id;
 	const uint8_t num_args;
@@ -24,7 +26,8 @@ const static CommandDictionary Commands[] = {
 	{1, 0, 7, "restart"},
 	{2, 0, 9, "resources"},
 	{3, 0, 7, "version"},
-	{4, 0, 7, "candisc"}
+	{4, 0, 7, "candisc"},
+	{CAN_DICTIONARY_LENGTH, 0, 8, "canorder"}
 };
 /************************************************************************/
 
@@ -74,6 +77,8 @@ private:
 
 	inline void send(uint8_t length) { usart_write_buffer_job((struct usart_module *const)getModule(), tx_buffer, length); }
 	uint8_t getCommandID(void);
+	void getArgumentParameters(uint8_t buffer_offset, uint8_t *p_start, uint8_t *p_end);
+	uint16_t getArgumentValue(uint8_t buffer_offset);
 };
 
 #endif // __cplusplus

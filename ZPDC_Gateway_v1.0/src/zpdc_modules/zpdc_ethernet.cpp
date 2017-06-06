@@ -20,7 +20,7 @@
 
 		setModule(this);
 
-		t_init("ETH", 1, 1);	// Task-Thread Initialization
+		t_init("ETH", 1, 2);	// Task-Thread Initialization
 	}
  }
 
@@ -56,6 +56,8 @@
 
 void ser_ethernet::task(void) {
 	uint8_t rx_command;
+	uint16_t arg_holder;
+	uint32_t can_command = 0;
 	rx_buffer_index = 0;
 
 	print(CLRS);
@@ -87,12 +89,35 @@ void ser_ethernet::task(void) {
 			break;
 			case 3:
 				printnl("ZPDC Gateway v0.3.4. June 2017");
+				print(getArgumentValue(rx_buffer[0]));
+				print(" ");
+				print(getArgumentValue(rx_buffer[0]));
+				print(" ");
+				print(getArgumentValue(rx_buffer[0]));
+				printnl(" ");
 			break;
-			case 4: {
-				uint32_t can_command = system_data->get_queue_parameter_value(CAN_DISCOVERY_REQUEST, 0, 0, 0);
+			case 4:
+				can_command = system_data->get_queue_parameter_value(CAN_DISCOVERY_REQUEST, 0, 0, 0);
 				xQueueSend(system_data->queue_to_can, &can_command, portMAX_DELAY);
 				vTaskSuspend(handle);
-			}
+			break;
+			case 5:
+				if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
+					can_command |= (uint32_t)((uint8_t)(arg_holder & 0x00FF) << 24);
+					if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
+						can_command |= (uint32_t)((uint8_t)(arg_holder & 0x00FF) << 16);
+						if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
+							can_command |= (uint32_t)((uint8_t)(arg_holder & 0x00FF) << 8);
+							if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
+								can_command |= (uint32_t)((uint8_t)(arg_holder & 0x00FF));
+							} else arg_holder = 0;
+						} else arg_holder = 0;
+					} else arg_holder = 0;
+				} else arg_holder = 0;
+				
+				if (arg_holder) printnl("Command will execute"); 
+				else printnl("Command was not parsed correctly!");
+					
 			break;
 			default:
 				printnl("Command not found!");
@@ -109,12 +134,62 @@ void ser_ethernet::task(void) {
 	}
 }
 
+void ser_ethernet::getArgumentParameters(uint8_t buffer_offset, uint8_t *p_start, uint8_t *p_end) {
+	bool start_found = false;
+	for(int i=buffer_offset; i<64; i++)
+		if(!start_found) {
+			if(rx_buffer[i] != ' ') { 
+				*p_start = i; 
+				start_found = true; 
+			}
+		} else if(rx_buffer[i] == ' ' || rx_buffer[i] == '\r' || rx_buffer[i] == '\n') { 
+			*p_end = i-1; 
+			return; 
+		} 
+}
+
+uint16_t ser_ethernet::getArgumentValue(uint8_t buffer_offset) {
+	volatile uint8_t p_start = 0;
+	volatile uint8_t p_end = 0;
+	volatile uint16_t result = 0;
+	volatile uint16_t multiplier = 0;
+	bool start_found = false;
+
+	for(int i=buffer_offset; i<64; i++)
+		if(!start_found) {
+			if(rx_buffer[i] != ' ') { 
+				p_start = i; 
+				start_found = true; 
+			}
+		} else if(rx_buffer[i] == ' ' || rx_buffer[i] == '\r' || rx_buffer[i] == '\n') {
+			p_end = i-1;
+			rx_buffer[0] = p_end + 1;
+			i=64; 
+		}
+
+	if (buffer_offset >= p_end) {
+		return 0xFFFF;
+	} else {
+		for(int i=0; i<(p_end - p_start + 1); i++) {
+			multiplier = (rx_buffer[p_start + i] > '9'? rx_buffer[p_start + i] : rx_buffer[p_start + i] - 48);
+			for(int j=(p_end - p_start + 1); j>i+1;j--) {
+				multiplier = multiplier * 10;
+			}
+			result += multiplier;
+		}
+	}
+	return result;
+}
+
 uint8_t ser_ethernet::getCommandID(void) {
+	uint8_t arg_start, arg_end;
+	getArgumentParameters(0, &arg_start, &arg_end);
+
 	rx_buffer_index--;	// Omit Line endings
-	for (uint8_t i=0; i<4; i++) {	// Iterate through all the available commands
-		for (uint8_t j=0; j<rx_buffer_index && rx_buffer_index == Commands[i].cmd_length; j++)
+	for (uint8_t i=0; i<CAN_DICTIONARY_LENGTH; i++) {	// Iterate through all the available commands
+		for (uint8_t j=arg_start; j<(arg_end - arg_start + 1) && (arg_end - arg_start + 1) == Commands[i].cmd_length; j++)
 			if (rx_buffer[j] == Commands[i].command[j]) {
-				if ( j == rx_buffer_index - 1) return Commands[i].cmd_id;
+				if ( j == (arg_end - arg_start)) { rx_buffer[0]=arg_end + 1; return Commands[i].cmd_id; }
 			} else j = rx_buffer_index;
 	}
 	return 0;

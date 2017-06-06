@@ -60,7 +60,7 @@
 						// Send Discovery Request across network
 					tx_message_0[0] = CAN_DISCOVERY_REQUEST;
 					port_pin_set_output_level(PIN_PA07, true);
-					send(1, CAN_SUBNET_NETWORK_REQUEST, CAN_BUFFER_0);
+					send(1, CAN_DEVICE_GATEWAY, CAN_SUBNET_NETWORK_REQUEST, CAN_BUFFER_0);
 
 					uint8_t net_size = 0;
 					while(xQueueReceive(queue_net_devices, &queue_item, 150) == pdTRUE) {
@@ -70,10 +70,21 @@
 						eth0->print(",");
 						eth0->print((uint16_t)((queue_item >> 8) & 0xFF));
 						eth0->print("]\t");
-						if ((queue_item & 0xFF) == 0xFF) eth0->printnl("NO_ADD");
-						else {
-							eth0->print((uint16_t)(queue_item & 0xFF));
-							eth0->printnl(" ");
+						if ((queue_item & 0xFF) == 0xFF) eth0->print("NO_ADD");
+						else eth0->print((uint16_t)(queue_item & 0xFF));
+						switch ((queue_item >> 24) & 0xFF) {
+							case CAN_DEVICE_GATEWAY:
+								eth0->printnl("\tGATEWAY");
+							break;
+							case CAN_DEVICE_HYBRID:
+								eth0->printnl("\tHYBRID_LEADER");
+							break;
+							case CAN_DEVICE_DRIVE_CARD:
+								eth0->printnl("\tDRIVE_CARD");
+							break;
+							default:
+								eth0->printnl("\tUNKNOWN");
+							break;
 						}
 					}
 					if (net_size == 0) CancelTransmission(CAN_BUFFER_0);
@@ -113,11 +124,14 @@
 					tx_message_0[1] = system_data->get_uid_high();
 					tx_message_0[2] = system_data->get_uid_low();
 					tx_message_0[3] = system_data->get_address();
-					send(4, CAN_SUBNET_NETWORK_REQUEST, CAN_BUFFER_0);
+					send(4, CAN_DEVICE_GATEWAY, CAN_SUBNET_NETWORK_REQUEST, CAN_BUFFER_0);
 					port_pin_set_output_level(PIN_PA03, false);
 				break;
 				case CAN_DISCOVERY_RETURN: {
-					uint32_t i_data = (uint32_t)((uint32_t)(rx_element_fifo_0.data[1] << 16) | (uint32_t)(rx_element_fifo_0.data[2] << 8) | (uint32_t)(rx_element_fifo_0.data[3]));
+					uint32_t i_data = (uint32_t)((uint32_t)((CAN_RX_FIFO_ID_DEVICE(rx_element_fifo_0.R0.reg) << 24 ) | 
+															rx_element_fifo_0.data[1] << 16) | 
+															(uint32_t)(rx_element_fifo_0.data[2] << 8) | 
+															(uint32_t)(rx_element_fifo_0.data[3]));
 					xQueueSendFromISR(queue_net_devices,
 										&i_data, 
 										&xHigherPriorityWoken);
@@ -140,11 +154,11 @@
 	portYIELD_FROM_ISR(xHigherPriorityWoken);
  }
 
- void can_service::send(uint8_t length, uint8_t sub_net, uint8_t buffer) {
+ void can_service::send(uint8_t length, uint8_t device, uint8_t sub_net, uint8_t buffer) {
 	struct can_tx_element tx_element;
 	can_get_tx_buffer_element_defaults(&tx_element);
 
-	tx_element.T0.reg |= CAN_TX_ELEMENT_T0_STANDARD_ID((sub_net << 7) | ((uint8_t) ((system_data->get_uid() >> 1) & 0x7F)));
+	tx_element.T0.reg |= CAN_TX_ELEMENT_T0_STANDARD_ID((device << 9) | (sub_net << 7) | ((uint8_t) ((system_data->get_uid() >> 1) & 0x7F)));
 	tx_element.T1.bit.DLC = (uint32_t)length;
 	for (uint8_t i=0; i<length; i++) tx_element.data[i] = tx_message_0[i];
 	can_set_tx_buffer_element(&can0_instance, &tx_element, (uint32_t)buffer);
