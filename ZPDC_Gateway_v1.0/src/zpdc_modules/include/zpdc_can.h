@@ -13,9 +13,17 @@
 /************************************************************************/
 /*  TYPE DEFINITIONS FOR NETWORK DEVICE TABLE                           */
 /************************************************************************/
-#define CAN_DISCOVERY_REQUEST	(uint8_t)('A')
+#define CAN_DISCOVERY_REQUEST		(uint8_t)('A')
+#define CAN_ORDER_UPDATE_REQUEST	(uint8_t)('B')
+#define CAN_REQUEST_LED_TOG			(uint8_t)('C')
 	// Return Values
-#define CAN_DISCOVERY_RETURN	(uint8_t)('a')
+#define CAN_DISCOVERY_RETURN		(uint8_t)('a')
+#define CAN_ORDER_UPDATE_RETURN		(uint8_t)('b')
+#define CAN_REQUEST_LED_TOG_RETURN	(uint8_t)('c')
+	/******** QUEUE COMPRESSION CONSTANTS *******************************/
+#define CAN_QUEUE_COMMAND_DISCOVERY	((uint8_t) 0b00000100)
+#define CAN_QUEUE_COMMAND_ORDER		((uint8_t) 0b00001000)
+#define CAN_QUEUE_COMMAND_LED_TRIG	((uint8_t) 0b00001100)
 	/********************************************************************/
 #define CAN_SUBNET_NETWORK_REQUEST	((uint8_t) 0)
 #define CAN_SUBNET_PARAMETER_SETUP	((uint8_t) 2)
@@ -97,6 +105,32 @@ private:
 
 	
 	inline void CancelTransmission(uint32_t buffer) { can_tx_cancel_request(&can0_instance, (uint32_t)(1 << buffer)); }
+	void PrintCanDeviceAddress(uint32_t data) {
+		eth0->print(" -> [");
+		eth0->print((uint16_t)((data >> 16) & 0xFF));
+		eth0->print(",");
+		eth0->print((uint16_t)((data >> 8) & 0xFF));
+		eth0->print("]\t");
+	}
+	void PrintCanDeviceData(uint32_t data) {
+		PrintCanDeviceAddress(data);
+		if ((data & 0xFF) == 0xFF) eth0->print("NO_ADD");
+		else eth0->print((uint16_t)(data & 0xFF));
+		switch ((data >> 24) & 0xFF) {
+			case CAN_DEVICE_GATEWAY:
+			eth0->printnl("\tGATEWAY");
+			break;
+			case CAN_DEVICE_HYBRID:
+			eth0->printnl("\tHYBRID_LEADER");
+			break;
+			case CAN_DEVICE_DRIVE_CARD:
+			eth0->printnl("\tDRIVE_CARD");
+			break;
+			default:
+			eth0->printnl("\tUNKNOWN");
+			break;
+		}
+	}
 };
 
 

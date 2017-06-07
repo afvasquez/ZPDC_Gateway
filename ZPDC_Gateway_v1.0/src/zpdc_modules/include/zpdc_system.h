@@ -68,6 +68,14 @@ public:
 	uint8_t get_uid_low(void) { return (uint8_t)(uid & 0xFF); }
 
 	uint8_t get_address(void) { return net_address; }
+	void set_address(uint8_t order) {
+		uint8_t page_data[EEPROM_PAGE_SIZE];
+		net_address = order;
+		eeprom_emulator_read_page(0, page_data);
+		page_data[2] = order;
+		eeprom_emulator_write_page(0,page_data);
+		eeprom_emulator_commit_page_buffer();	// END UID EEPROM STORAGE
+	}
 private:
 	uint16_t uid;
 	uint8_t net_address;
