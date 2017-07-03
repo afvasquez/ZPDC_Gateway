@@ -54,12 +54,15 @@
 	portYIELD_FROM_ISR( xHigherPriorityWoken );
  }
 
+static CanQueueRequest can_requests[2];
 void ser_ethernet::task(void) {
 	uint8_t rx_command;
 	uint16_t arg_holder;
-	uint32_t can_command = 0;
 	rx_buffer_index = 0;
 
+	can_requests[0].point_self = (uint32_t)&(can_requests[0]);
+	can_requests[1].point_self = (uint32_t)&(can_requests[1]);
+	
 	print(CLRS);
 	printnl(EDGE);
 	printnl(BANN);
@@ -88,45 +91,59 @@ void ser_ethernet::task(void) {
 				printnl("]");
 			break;
 			case 3:
-				printnl("ZPDC Gateway v0.3.4. June 2017");
+				printnl("ZPDC Gateway v0.3.5. July 2017");
 			break;
 			case 4:
-				can_command = system_data->get_queue_parameter_value(CAN_QUEUE_COMMAND_DISCOVERY, 0, 0, 0);
-				xQueueSend(system_data->queue_to_can, &can_command, portMAX_DELAY);
-				vTaskSuspend(handle);
+				can_requests[0].can_command = CAN_QUEUE_COMMAND_DISCOVERY;
+ 				xQueueSend(system_data->queue_to_can, &(can_requests[0].point_self), portMAX_DELAY);
+ 				vTaskSuspend(handle);
 			break;
 			case 5:
-				if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
-					can_command = (uint32_t)((uint8_t)(arg_holder & 0x00FF) << 16);
-					if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
-						can_command |= (uint32_t)((uint8_t)(arg_holder & 0x00FF) << 8);
-						if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
-							can_command |= (uint32_t)((uint8_t)(arg_holder & 0x00FF));
-							if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
-								if ((uint8_t)arg_holder == 'D') can_command |= (uint32_t)((CAN_QUEUE_COMMAND_ORDER | CAN_DEVICE_DRIVE_CARD) << 24);
-								else if ((uint8_t)arg_holder == 'H') can_command |= (uint32_t)((CAN_QUEUE_COMMAND_ORDER | CAN_DEVICE_HYBRID) << 24);
-								else if ((uint8_t)arg_holder == 'G') can_command |= (uint32_t)((CAN_QUEUE_COMMAND_ORDER | CAN_DEVICE_GATEWAY) << 24);
-								else arg_holder = 0;
-							} else arg_holder = 0;
-						} else arg_holder = 0;
-					} else arg_holder = 0;
-				} else arg_holder = 0;
+				can_requests[0].can_command = CAN_QUEUE_COMMAND_ORDER;
+ 				if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
+ 					can_requests[0].arg_1 = (arg_holder << 8);
+ 					if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
+ 						can_requests[0].arg_1 |= (arg_holder & 0x00FF);
+ 						if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
+ 							can_requests[0].arg_2 = (arg_holder << 8);
+ 							if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
+ 								if ((uint8_t)arg_holder == 'D') can_requests[0].arg_2 |= CAN_DEVICE_DRIVE_CARD;
+ 								else if ((uint8_t)arg_holder == 'H') can_requests[0].arg_2 |= CAN_DEVICE_HYBRID;
+ 								else if ((uint8_t)arg_holder == 'G') can_requests[0].arg_2 |= CAN_DEVICE_GATEWAY;
+ 								else arg_holder = 0;
+ 							} else arg_holder = 0;
+ 						} else arg_holder = 0;
+ 					} else arg_holder = 0;
+ 				} else arg_holder = 0;
 				
 				if (arg_holder) {
-					xQueueSend(system_data->queue_to_can, &can_command, portMAX_DELAY);
+					xQueueSend(system_data->queue_to_can, &(can_requests[0].point_self), portMAX_DELAY);
 					vTaskSuspend(handle);
 				} else printnl("ERROR: Error parsing arguments.");
 			break;
 			case 6:
+				
+			break;
+			case 7:
+				
+			break;
+			case 8:
+				
+			break;
+			case 9:
+
+			break;
+			case 10:
+				can_requests[0].can_command = CAN_QUEUE_COMMAND_LED_TRIG;
 				if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
-					can_command = (uint32_t)((uint8_t)(arg_holder & 0x00FF) << 16);
+					can_requests[0].arg_1 = (arg_holder << 8);
 					if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
-						can_command |= (uint32_t)((CAN_QUEUE_COMMAND_LED_TRIG) << 24);
-						can_command |= (uint32_t)((uint8_t)(arg_holder & 0x00FF) << 8);
+						can_requests[0].arg_1 |= (arg_holder & 0x00FF);
 					} else arg_holder = 0;
 				} else arg_holder = 0;
+
 				if (arg_holder) {
-					xQueueSend(system_data->queue_to_can, &can_command, portMAX_DELAY);
+					xQueueSend(system_data->queue_to_can, &(can_requests[0].point_self), portMAX_DELAY);
 					vTaskSuspend(handle);
 				} else printnl("ERROR: Error parsing arguments.");
 			break;

@@ -16,14 +16,22 @@
 #define CAN_DISCOVERY_REQUEST		(uint8_t)('A')
 #define CAN_ORDER_UPDATE_REQUEST	(uint8_t)('B')
 #define CAN_REQUEST_LED_TOG			(uint8_t)('C')
+#define CAN_MOTOR_START				(uint8_t)('D')
+#define CAN_MOTOR_STOP				(uint8_t)('E')
+#define CAN_MOTOR_TUNE				(uint8_t)('F')
+#define CAN_MOTOR_PARAMETER			(uint8_t)('G')
 	// Return Values
 #define CAN_DISCOVERY_RETURN		(uint8_t)('a')
 #define CAN_ORDER_UPDATE_RETURN		(uint8_t)('b')
 #define CAN_REQUEST_LED_TOG_RETURN	(uint8_t)('c')
+#define CAN_MOTOR_START_RETURN		(uint8_t)('d')
+#define CAN_MOTOR_STOP_RETURN		(uint8_t)('e')
+#define CAN_MOTOR_TUNE_RETURN		(uint8_t)('f')
+#define CAN_MOTOR_PARAMETER_RETURN	(uint8_t)('g')
 	/******** QUEUE COMPRESSION CONSTANTS *******************************/
-#define CAN_QUEUE_COMMAND_DISCOVERY	((uint8_t) 0b00000100)
-#define CAN_QUEUE_COMMAND_ORDER		((uint8_t) 0b00001000)
-#define CAN_QUEUE_COMMAND_LED_TRIG	((uint8_t) 0b00001100)
+#define CAN_QUEUE_COMMAND_DISCOVERY	((uint8_t) 1)
+#define CAN_QUEUE_COMMAND_ORDER		((uint8_t) 2)
+#define CAN_QUEUE_COMMAND_LED_TRIG	((uint8_t) 3)
 	/********************************************************************/
 #define CAN_SUBNET_NETWORK_REQUEST	((uint8_t) 0)
 #define CAN_SUBNET_PARAMETER_SETUP	((uint8_t) 2)
@@ -38,6 +46,15 @@
 
 #define CAN_RX_FIFO_ID_SUBNET(value)	(uint8_t)((0x03ul & ((value) >> (CAN_TX_ELEMENT_T0_STANDARD_ID_Pos + 7))))
 #define CAN_RX_FIFO_ID_DEVICE(value)	(uint8_t)((0x03ul & ((value) >> (CAN_TX_ELEMENT_T0_STANDARD_ID_Pos + 9))))
+
+/************************************************************************/
+/*  TYPE DEFINITION FOR PID TUNNING STRUCTURE                           */
+/************************************************************************/
+typedef struct {
+	uint8_t can_command;
+	uint16_t arg_1, arg_2, arg3;
+	uint32_t point_self;
+} CanQueueRequest;
 
 /************************************************************************/
 /*  TYPE DEFINITIONS FOR NETWORK DEVICE TABLE                           */

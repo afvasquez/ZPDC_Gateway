@@ -51,10 +51,13 @@
 
  void can_service::task(void) {
 	uint32_t queue_item = 0;
+	CanQueueRequest *can_queue_item;
 
 	for(;;) {
 		if (xQueueReceive(system_data->queue_to_can, &queue_item, portMAX_DELAY)) {
-			switch (system_data->get_queue_entry_parameter(queue_item, 4) & 0xFC) {
+			//switch (system_data->get_queue_entry_parameter(queue_item, 4) & 0xFC) {
+			can_queue_item = (CanQueueRequest *)queue_item;
+			switch (can_queue_item->can_command) {
 				case CAN_QUEUE_COMMAND_DISCOVERY: {
 					eth0->printnl("CAN DISCOVERY v0.1");
 						// Send Discovery Request across network
@@ -74,10 +77,10 @@
 				break;
 				case CAN_QUEUE_COMMAND_ORDER:
 					tx_message_0[0] = CAN_ORDER_UPDATE_REQUEST;
-					tx_message_0[1] = system_data->get_queue_entry_parameter(queue_item, 3);
-					tx_message_0[2] = system_data->get_queue_entry_parameter(queue_item, 2);
-					tx_message_0[3] = system_data->get_queue_entry_parameter(queue_item, 1);
-					tx_message_0[4] = system_data->get_queue_entry_parameter(queue_item, 4) & 0x03;
+					tx_message_0[1] = can_queue_item->arg_1 >> 8;
+					tx_message_0[2] = can_queue_item->arg_1 & 0x00FF;
+					tx_message_0[3] = can_queue_item->arg_2 >> 8;
+					tx_message_0[4] = can_queue_item->arg_2 & 0x0003;
 					send(5,CAN_DEVICE_GATEWAY, CAN_SUBNET_NETWORK_REQUEST, CAN_BUFFER_0);
 					if (xQueueReceive(queue_net_devices, &queue_item, 150)) PrintCanDeviceData(queue_item);
 					else { CancelTransmission(CAN_BUFFER_0); eth0->printnl(" -> Device did not respond"); }
@@ -85,8 +88,8 @@
 				break;
 				case CAN_QUEUE_COMMAND_LED_TRIG:
 					tx_message_0[0] = CAN_REQUEST_LED_TOG;
-					tx_message_0[1] = system_data->get_queue_entry_parameter(queue_item, 3);
-					tx_message_0[2] = system_data->get_queue_entry_parameter(queue_item, 2);
+					tx_message_0[1] = can_queue_item->arg_1 >> 8;
+					tx_message_0[2] = can_queue_item->arg_1 & 0x00FF;
 					send(3,CAN_DEVICE_GATEWAY, CAN_SUBNET_NETWORK_REQUEST, CAN_BUFFER_0);
 					if (xQueueReceive(queue_net_devices, &queue_item, 150)) {
 						PrintCanDeviceAddress(queue_item);
@@ -96,7 +99,7 @@
 					vTaskResume(eth0->handle);
 				break;
 				default:
-					eth0->print(system_data->get_queue_entry_parameter(queue_item, 4) & 0xFC); eth0->printnl(" :: Unknown Request..."); 
+					eth0->print(can_queue_item->can_command); eth0->printnl(" :: Unknown Request..."); 
 					vTaskResume(eth0->handle);
 				break;
 			}
@@ -130,7 +133,10 @@
 					tx_message_0[0] = CAN_ORDER_UPDATE_RETURN;
 				case CAN_DISCOVERY_REQUEST:
 					port_pin_set_output_level(PIN_PA03, true);
-					if (rx_element_fifo_0.data[0] == CAN_DISCOVERY_REQUEST) { tx_message_0[0] = CAN_DISCOVERY_RETURN; isCanToSend = true; }
+
+					if (rx_element_fifo_0.data[0] == CAN_DISCOVERY_REQUEST) 
+						{ tx_message_0[0] = CAN_DISCOVERY_RETURN; isCanToSend = true; }
+
 					tx_message_0[1] = system_data->get_uid_high();
 					tx_message_0[2] = system_data->get_uid_low();
 					tx_message_0[3] = system_data->get_address();
