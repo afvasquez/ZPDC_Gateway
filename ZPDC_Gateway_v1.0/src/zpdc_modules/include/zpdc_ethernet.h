@@ -13,7 +13,7 @@
 #include "zpdc_sercom.h"
 
 /********************** Dictionary Definitions **************************/
-#define CAN_DICTIONARY_LENGTH			6
+#define CAN_DICTIONARY_LENGTH			10
 #define CAN_DICTIONARY_ARG_NOT_FOUND	(uint16_t)0xFFFF
 typedef struct {
 	const uint8_t cmd_id;
@@ -28,6 +28,10 @@ const static CommandDictionary Commands[] = {
 	{3, 0, 7, "version"},
 	{4, 0, 7, "candisc"},
 	{5, 0, 8, "canorder"},
+	{6, 0, 6, "motrun"},
+	{7, 0, 7, "motstop"},
+	{8, 0, 6, "setpid"},
+	{9, 0, 7, "setpars"},
 	{CAN_DICTIONARY_LENGTH, 0, 6, "canled"}
 };
 /************************************************************************/
@@ -40,7 +44,7 @@ public:
 	const constexpr static char* NAME = "ETHERNET\0";
 	const constexpr static char* CLRS = "\e[2J\e[3J\e[H\0";
 	const constexpr static char* EDGE = "#######################################################\0";
-	const constexpr static char* BANN = "#            ZPDC GATEWAY INTERFACE V0.3.4            #\0";
+	const constexpr static char* BANN = "#        ZPDC GATEWAY INTERFACE V0.3.5 PID_TUNE       #\0";
 	const constexpr static char* KEYS = ">> \0";
 
 	ser_ethernet(SerialEthernetConfiguration_SERCOM0 ser_config, ZpdcSystem *system_module);
