@@ -57,6 +57,7 @@
 		if (xQueueReceive(system_data->queue_to_can, &queue_item, portMAX_DELAY)) {
 			//switch (system_data->get_queue_entry_parameter(queue_item, 4) & 0xFC) {
 			can_queue_item = (CanQueueRequest *)queue_item;
+			tx_message_0[0] = 0;
 			switch (can_queue_item->can_command) {
 				case CAN_QUEUE_COMMAND_DISCOVERY: {
 					eth0->printnl("CAN DISCOVERY v0.1");
@@ -88,14 +89,44 @@
 				break;
 				case CAN_QUEUE_COMMAND_LED_TRIG:
 					tx_message_0[0] = CAN_REQUEST_LED_TOG;
+				case CAN_QUEUE_COMMAND_MOT_START:
+					if(tx_message_0[0] == 0) tx_message_0[0] = CAN_MOTOR_START;
+				case CAN_QUEUE_COMMAND_MOT_STOP:
+					if(tx_message_0[0] == 0) tx_message_0[0] = CAN_MOTOR_STOP;
 					tx_message_0[1] = can_queue_item->arg_1 >> 8;
 					tx_message_0[2] = can_queue_item->arg_1 & 0x00FF;
 					send(3,CAN_DEVICE_GATEWAY, CAN_SUBNET_NETWORK_REQUEST, CAN_BUFFER_0);
 					if (xQueueReceive(queue_net_devices, &queue_item, 150)) {
 						PrintCanDeviceAddress(queue_item);
+						if (tx_message_0[0] == CAN_REQUEST_LED_TOG) eth0->print("LED ");
+						else eth0->print("MOTOR ");
 						if (system_data->get_queue_entry_parameter(queue_item, 1)) eth0->printnl("ON");
 						else eth0->printnl("OFF");
 					} else { CancelTransmission(CAN_BUFFER_0); eth0->printnl(" -> Device did not respond"); }
+					vTaskResume(eth0->handle);
+				break;
+				case CAN_QUEUE_COMMAND_PID_PARS:
+					tx_message_0[0] = CAN_MOTOR_PID_TUNE;
+				case CAN_QUEUE_COMMAND_MOT_PARSA:
+					if(tx_message_0[0] == 0) tx_message_0[0] = CAN_MOTOR_PARAM_A;
+				case CAN_QUEUE_COMMAND_MOT_PARSB:
+					if(tx_message_0[0] == 0) tx_message_0[0] = CAN_MOTOR_PARAM_B;
+					tx_message_0[1] = (uint8_t)(can_queue_item->arg_1 & 0x00FF);
+					tx_message_0[2] = (uint8_t)(can_queue_item->arg_2 >> 8);
+					tx_message_0[3] = (uint8_t)(can_queue_item->arg_2 & 0x00FF);
+					tx_message_0[4] = (uint8_t)(can_queue_item->arg_3 >> 8);
+					tx_message_0[5] = (uint8_t)(can_queue_item->arg_3 & 0x00FF);
+					tx_message_0[6] = (uint8_t)(can_queue_item->arg_4 >> 8);
+					tx_message_0[7] = (uint8_t)(can_queue_item->arg_4 & 0x00FF);
+					send(8,CAN_DEVICE_GATEWAY, CAN_SUBNET_NETWORK_REQUEST, CAN_BUFFER_0);
+					while(xQueueReceive(queue_net_devices, &queue_item, 150) == pdTRUE) {	// TODO: Wait can be variable
+						PrintCanDeviceOrder(system_data->get_queue_entry_parameter(queue_item, 3));
+						uint8_t operation_result = system_data->get_queue_entry_parameter(queue_item, 2);
+						if (operation_result == 0)		eth0->printnl("FAIL");
+						else if (operation_result == 1)	eth0->printnl("DONE");
+						else if (operation_result == 2)	eth0->printnl("NO_CHANGE");
+						else eth0->printnl("ERROR");
+					}
 					vTaskResume(eth0->handle);
 				break;
 				default:
@@ -154,8 +185,13 @@
 						port_pin_set_output_level(PIN_PA03, false);
 					}
 				break;
+				case CAN_MOTOR_START_RETURN:
+				case CAN_MOTOR_STOP_RETURN:
 				case CAN_REQUEST_LED_TOG_RETURN:
 				case CAN_ORDER_UPDATE_RETURN:
+				case CAN_MOTOR_PID_TUNE_RETURN:
+				case CAN_MOTOR_PARAM_A_RETURN:
+				case CAN_MOTOR_PARAM_B_RETURN:
 				case CAN_DISCOVERY_RETURN: {
 					uint32_t i_data = (uint32_t)((uint32_t)((CAN_RX_FIFO_ID_DEVICE(rx_element_fifo_0.R0.reg) << 24 ) | 
 															rx_element_fifo_0.data[1] << 16) | 

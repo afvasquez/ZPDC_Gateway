@@ -18,20 +18,28 @@
 #define CAN_REQUEST_LED_TOG			(uint8_t)('C')
 #define CAN_MOTOR_START				(uint8_t)('D')
 #define CAN_MOTOR_STOP				(uint8_t)('E')
-#define CAN_MOTOR_TUNE				(uint8_t)('F')
-#define CAN_MOTOR_PARAMETER			(uint8_t)('G')
+#define CAN_MOTOR_PID_TUNE			(uint8_t)('F')
+#define CAN_MOTOR_PARAM_A			(uint8_t)('G')
+#define CAN_MOTOR_PARAM_B			(uint8_t)('H')
 	// Return Values
 #define CAN_DISCOVERY_RETURN		(uint8_t)('a')
 #define CAN_ORDER_UPDATE_RETURN		(uint8_t)('b')
 #define CAN_REQUEST_LED_TOG_RETURN	(uint8_t)('c')
 #define CAN_MOTOR_START_RETURN		(uint8_t)('d')
 #define CAN_MOTOR_STOP_RETURN		(uint8_t)('e')
-#define CAN_MOTOR_TUNE_RETURN		(uint8_t)('f')
-#define CAN_MOTOR_PARAMETER_RETURN	(uint8_t)('g')
+#define CAN_MOTOR_PID_TUNE_RETURN	(uint8_t)('f')
+#define CAN_MOTOR_PARAM_A_RETURN	(uint8_t)('g')
+#define CAN_MOTOR_PARAM_B_RETURN	(uint8_t)('h')
 	/******** QUEUE COMPRESSION CONSTANTS *******************************/
 #define CAN_QUEUE_COMMAND_DISCOVERY	((uint8_t) 1)
 #define CAN_QUEUE_COMMAND_ORDER		((uint8_t) 2)
 #define CAN_QUEUE_COMMAND_LED_TRIG	((uint8_t) 3)
+#define CAN_QUEUE_COMMAND_MOT_START	((uint8_t) 4)
+#define CAN_QUEUE_COMMAND_MOT_STOP	((uint8_t) 5)
+#define CAN_QUEUE_COMMAND_PID_PARS	((uint8_t) 6)
+#define CAN_QUEUE_COMMAND_MOT_PARSA	((uint8_t) 7)
+#define CAN_QUEUE_COMMAND_MOT_PARSB	((uint8_t) 8)
+
 	/********************************************************************/
 #define CAN_SUBNET_NETWORK_REQUEST	((uint8_t) 0)
 #define CAN_SUBNET_PARAMETER_SETUP	((uint8_t) 2)
@@ -52,7 +60,7 @@
 /************************************************************************/
 typedef struct {
 	uint8_t can_command;
-	uint16_t arg_1, arg_2, arg3;
+	uint16_t arg_1, arg_2, arg_3, arg_4;
 	uint32_t point_self;
 } CanQueueRequest;
 
@@ -122,6 +130,11 @@ private:
 
 	
 	inline void CancelTransmission(uint32_t buffer) { can_tx_cancel_request(&can0_instance, (uint32_t)(1 << buffer)); }
+	void PrintCanDeviceOrder(uint8_t data) {
+		eth0->print(" -> [");
+		eth0->print((uint16_t)(data));
+		eth0->print("]\t");
+	}
 	void PrintCanDeviceAddress(uint32_t data) {
 		eth0->print(" -> [");
 		eth0->print((uint16_t)((data >> 16) & 0xFF));

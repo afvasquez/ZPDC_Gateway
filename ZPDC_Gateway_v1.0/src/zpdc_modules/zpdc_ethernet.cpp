@@ -122,18 +122,46 @@ void ser_ethernet::task(void) {
 				} else printnl("ERROR: Error parsing arguments.");
 			break;
 			case 6:
-				
-			break;
+				can_requests[0].can_command = CAN_QUEUE_COMMAND_MOT_START;
 			case 7:
-				
+				if (rx_command == 7) can_requests[0].can_command = CAN_QUEUE_COMMAND_MOT_STOP;
+				if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
+					can_requests[0].arg_1 = (arg_holder << 8);
+					if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
+						can_requests[0].arg_1 |= (arg_holder & 0x00FF);
+					} else arg_holder = 0;
+				} else arg_holder = 0;
+
+				if (arg_holder) {
+					xQueueSend(system_data->queue_to_can, &(can_requests[0].point_self), portMAX_DELAY);
+					vTaskSuspend(handle);
+				} else printnl("ERROR: Error parsing arguments.");				
 			break;
 			case 8:
-				
-			break;
+				can_requests[0].can_command = CAN_QUEUE_COMMAND_PID_PARS;
 			case 9:
-
-			break;
+				if (rx_command == 9) can_requests[0].can_command = CAN_QUEUE_COMMAND_MOT_PARSA;
 			case 10:
+				if (rx_command == 10) can_requests[0].can_command = CAN_QUEUE_COMMAND_MOT_PARSB;
+				if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
+					can_requests[0].arg_1 = (arg_holder & 0x00FF);		// Order #
+					if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
+						can_requests[0].arg_2 = arg_holder;				// Ramp Duration in ms
+						if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
+							can_requests[0].arg_3 = arg_holder;			// Speed Setting in RPM
+							if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
+								can_requests[0].arg_4 = arg_holder;		// Gear Ratio Setting
+							} else arg_holder = CAN_DICTIONARY_ARG_NOT_FOUND;
+						} else arg_holder = CAN_DICTIONARY_ARG_NOT_FOUND;
+					} else arg_holder = CAN_DICTIONARY_ARG_NOT_FOUND;
+				} else arg_holder = CAN_DICTIONARY_ARG_NOT_FOUND;
+				
+				if (arg_holder != CAN_DICTIONARY_ARG_NOT_FOUND) {
+					xQueueSend(system_data->queue_to_can, &(can_requests[0].point_self), portMAX_DELAY);
+					vTaskSuspend(handle);
+				} else printnl("ERROR: Error parsing arguments.");
+			break;
+			case 11:
 				can_requests[0].can_command = CAN_QUEUE_COMMAND_LED_TRIG;
 				if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
 					can_requests[0].arg_1 = (arg_holder << 8);
