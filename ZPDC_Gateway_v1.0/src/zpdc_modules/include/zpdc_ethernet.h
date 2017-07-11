@@ -13,7 +13,7 @@
 #include "zpdc_sercom.h"
 
 /********************** Dictionary Definitions **************************/
-#define CAN_DICTIONARY_LENGTH			11
+#define CAN_DICTIONARY_LENGTH			12
 #define CAN_DICTIONARY_ARG_NOT_FOUND	(uint16_t)0xFFFF
 typedef struct {
 	const uint8_t cmd_id;
@@ -28,11 +28,12 @@ const static CommandDictionary Commands[] = {
 	{3, 0, 7, "version"},
 	{4, 0, 7, "candisc"},
 	{5, 0, 8, "canorder"},
-	{6, 0, 6, "motrun"},
-	{7, 0, 7, "motstop"},
-	{8, 0, 6, "setpid"},
-	{9, 0, 8, "setparsa"},
-	{10, 0, 8, "setparsb"},
+	{6, 0, 8, "getparsa"},
+	{7, 0, 6, "motrun"},
+	{8, 0, 7, "motstop"},
+	{9, 0, 6, "setpid"},
+	{10, 0, 8, "setparsa"},
+	{11, 0, 8, "setparsb"},
 	{CAN_DICTIONARY_LENGTH, 0, 6, "canled"}
 };
 /************************************************************************/

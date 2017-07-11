@@ -89,6 +89,8 @@
 				break;
 				case CAN_QUEUE_COMMAND_LED_TRIG:
 					tx_message_0[0] = CAN_REQUEST_LED_TOG;
+				case CAN_QUEUE_COMMAND_GET_PARSA:
+					tx_message_0[0] = CAN_MOTOR_GET_PARAMA;
 				case CAN_QUEUE_COMMAND_MOT_START:
 					if(tx_message_0[0] == 0) tx_message_0[0] = CAN_MOTOR_START;
 				case CAN_QUEUE_COMMAND_MOT_STOP:
@@ -96,13 +98,18 @@
 					tx_message_0[1] = can_queue_item->arg_1 >> 8;
 					tx_message_0[2] = can_queue_item->arg_1 & 0x00FF;
 					send(3,CAN_DEVICE_GATEWAY, CAN_SUBNET_NETWORK_REQUEST, CAN_BUFFER_0);
-					if (xQueueReceive(queue_net_devices, &queue_item, 150)) {
-						PrintCanDeviceAddress(queue_item);
-						if (tx_message_0[0] == CAN_REQUEST_LED_TOG) eth0->print("LED ");
-						else eth0->print("MOTOR ");
-						if (system_data->get_queue_entry_parameter(queue_item, 1)) eth0->printnl("ON");
-						else eth0->printnl("OFF");
-					} else { CancelTransmission(CAN_BUFFER_0); eth0->printnl(" -> Device did not respond"); }
+					if (tx_message_0[1] + tx_message_0[2] == 0) {
+						uint8_t dev_response = 0;
+						while(xQueueReceive(queue_net_devices, &queue_item, 150) == pdTRUE) {
+							dev_response++;
+							PrintCanDeviceCommandSetAlphaResponse(queue_item);
+						}
+						if(dev_response == 0) { CancelTransmission(CAN_BUFFER_0); eth0->printnl(" -> Devices did NOT respond"); }
+					} else {
+						if (xQueueReceive(queue_net_devices, &queue_item, 150)) {
+							PrintCanDeviceCommandSetAlphaResponse(queue_item);
+						} else { CancelTransmission(CAN_BUFFER_0); eth0->printnl(" -> Device did not respond"); }
+					}
 					vTaskResume(eth0->handle);
 				break;
 				case CAN_QUEUE_COMMAND_PID_PARS:
@@ -185,6 +192,7 @@
 						port_pin_set_output_level(PIN_PA03, false);
 					}
 				break;
+				case CAN_MOTOR_GET_PARAMA_RETURN:
 				case CAN_MOTOR_START_RETURN:
 				case CAN_MOTOR_STOP_RETURN:
 				case CAN_REQUEST_LED_TOG_RETURN:

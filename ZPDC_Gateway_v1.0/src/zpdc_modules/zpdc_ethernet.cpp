@@ -110,39 +110,41 @@ void ser_ethernet::task(void) {
  								if ((uint8_t)arg_holder == 'D') can_requests[0].arg_2 |= CAN_DEVICE_DRIVE_CARD;
  								else if ((uint8_t)arg_holder == 'H') can_requests[0].arg_2 |= CAN_DEVICE_HYBRID;
  								else if ((uint8_t)arg_holder == 'G') can_requests[0].arg_2 |= CAN_DEVICE_GATEWAY;
- 								else arg_holder = 0;
- 							} else arg_holder = 0;
- 						} else arg_holder = 0;
- 					} else arg_holder = 0;
- 				} else arg_holder = 0;
+ 								else arg_holder = CAN_DICTIONARY_ARG_NOT_FOUND;
+ 							} else arg_holder = CAN_DICTIONARY_ARG_NOT_FOUND;
+ 						} else arg_holder = CAN_DICTIONARY_ARG_NOT_FOUND;
+ 					} else arg_holder = CAN_DICTIONARY_ARG_NOT_FOUND;
+ 				} else arg_holder = CAN_DICTIONARY_ARG_NOT_FOUND;
 				
-				if (arg_holder) {
+				if (arg_holder != CAN_DICTIONARY_ARG_NOT_FOUND) {
 					xQueueSend(system_data->queue_to_can, &(can_requests[0].point_self), portMAX_DELAY);
 					vTaskSuspend(handle);
 				} else printnl("ERROR: Error parsing arguments.");
 			break;
 			case 6:
-				can_requests[0].can_command = CAN_QUEUE_COMMAND_MOT_START;
+				can_requests[0].can_command = CAN_QUEUE_COMMAND_GET_PARSA;
 			case 7:
-				if (rx_command == 7) can_requests[0].can_command = CAN_QUEUE_COMMAND_MOT_STOP;
+				if (rx_command == 7) can_requests[0].can_command = CAN_QUEUE_COMMAND_MOT_START;
+			case 8:
+				if (rx_command == 8) can_requests[0].can_command = CAN_QUEUE_COMMAND_MOT_STOP;
 				if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
 					can_requests[0].arg_1 = (arg_holder << 8);
 					if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
 						can_requests[0].arg_1 |= (arg_holder & 0x00FF);
-					} else arg_holder = 0;
-				} else arg_holder = 0;
+					} else arg_holder = CAN_DICTIONARY_ARG_NOT_FOUND;
+				} else arg_holder = CAN_DICTIONARY_ARG_NOT_FOUND;
 
-				if (arg_holder) {
+				if (arg_holder != CAN_DICTIONARY_ARG_NOT_FOUND) {
 					xQueueSend(system_data->queue_to_can, &(can_requests[0].point_self), portMAX_DELAY);
 					vTaskSuspend(handle);
 				} else printnl("ERROR: Error parsing arguments.");				
 			break;
-			case 8:
-				can_requests[0].can_command = CAN_QUEUE_COMMAND_PID_PARS;
 			case 9:
-				if (rx_command == 9) can_requests[0].can_command = CAN_QUEUE_COMMAND_MOT_PARSA;
+				can_requests[0].can_command = CAN_QUEUE_COMMAND_PID_PARS;
 			case 10:
-				if (rx_command == 10) can_requests[0].can_command = CAN_QUEUE_COMMAND_MOT_PARSB;
+				if (rx_command == 10) can_requests[0].can_command = CAN_QUEUE_COMMAND_MOT_PARSA;
+			case 11:
+				if (rx_command == 11) can_requests[0].can_command = CAN_QUEUE_COMMAND_MOT_PARSB;
 				if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
 					can_requests[0].arg_1 = (arg_holder & 0x00FF);		// Order #
 					if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
@@ -161,16 +163,16 @@ void ser_ethernet::task(void) {
 					vTaskSuspend(handle);
 				} else printnl("ERROR: Error parsing arguments.");
 			break;
-			case 11:
+			case 12:
 				can_requests[0].can_command = CAN_QUEUE_COMMAND_LED_TRIG;
 				if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
 					can_requests[0].arg_1 = (arg_holder << 8);
 					if ((arg_holder = (getArgumentValue(rx_buffer[0]))) != CAN_DICTIONARY_ARG_NOT_FOUND) {
 						can_requests[0].arg_1 |= (arg_holder & 0x00FF);
-					} else arg_holder = 0;
-				} else arg_holder = 0;
+					} else arg_holder = CAN_DICTIONARY_ARG_NOT_FOUND;
+				} else arg_holder = CAN_DICTIONARY_ARG_NOT_FOUND;
 
-				if (arg_holder) {
+				if (arg_holder != CAN_DICTIONARY_ARG_NOT_FOUND) {
 					xQueueSend(system_data->queue_to_can, &(can_requests[0].point_self), portMAX_DELAY);
 					vTaskSuspend(handle);
 				} else printnl("ERROR: Error parsing arguments.");
