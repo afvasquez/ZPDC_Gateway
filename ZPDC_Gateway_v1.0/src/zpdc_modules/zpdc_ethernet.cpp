@@ -20,6 +20,8 @@
 
 		setModule(this);
 
+		eth_error_report.parent_interface = this;
+
 		t_init("ETH", 1, 2);	// Task-Thread Initialization
 	}
  }
@@ -255,9 +257,17 @@ uint8_t ser_ethernet::getCommandID(void) {
 
 // SERIAL ETHERNET UTILITIES
 void ser_ethernet::print(const char* string_to_print) {
+	print(string_to_print, false);
+}
+BaseType_t ser_ethernet::printex(const char* string_to_print) {
+	return print(string_to_print, true);
+}
+BaseType_t ser_ethernet::print(const char* string_to_print, bool ex_safe) {
+	BaseType_t xHigherTaskWoken = pdFALSE;
 	uint8_t length_counter = 0;
 
-	xSemaphoreTake(xTxMutex, portMAX_DELAY);
+	if (ex_safe) xSemaphoreTakeFromISR(xTxMutex, &xHigherTaskWoken);
+	else xSemaphoreTake(xTxMutex, portMAX_DELAY);
 
 	while( (*(string_to_print + length_counter) != '\0') && (length_counter < 64) ) {
 		tx_buffer[length_counter] = *(string_to_print + length_counter);
@@ -266,15 +276,27 @@ void ser_ethernet::print(const char* string_to_print) {
 
 	// TODO: A string length check to be implemented
 	send(length_counter);
+
+	return xHigherTaskWoken;
 }
 void ser_ethernet::print(int16_t value) {
+	print(value, false);
+}
+BaseType_t ser_ethernet::printex(int16_t value) {
+	return print(value, true);
+}
+BaseType_t ser_ethernet::print(int16_t value, bool ex_safe) {
+	BaseType_t xHigherTaskWoken = pdFALSE;
 		// Negative sign
 	if (value < 0) {
 		value *= -1;
-		print("-");
+		if (ex_safe) printex("-");
+		else print("-");
 	}
 
-	xSemaphoreTake(xTxMutex, portMAX_DELAY);
+	if (ex_safe) xSemaphoreTakeFromISR(xTxMutex, &xHigherTaskWoken);
+	else xSemaphoreTake(xTxMutex, portMAX_DELAY);
+
 	bool isLeftZero = true;
 	uint16_t divider = 10000;
 	uint16_t index_iterator = 0;
@@ -294,13 +316,49 @@ void ser_ethernet::print(int16_t value) {
 		if (divider == 0 && isLeftZero) tx_buffer[index_iterator++] = '0';
 	}
 	send(index_iterator);
+
+	return xHigherTaskWoken;
 }
-
 void ser_ethernet::printnl(const char* string_to_print) {
-	print(string_to_print);
+	printnl(string_to_print, false);
+}
+BaseType_t ser_ethernet::printnlex(const char* string_to_print) {
+	return printnl(string_to_print, true);
+}
+BaseType_t ser_ethernet::printnl(const char* string_to_print, bool ex_safe) {
+	BaseType_t xHigherTaskWoken = pdFALSE;
 
-	xSemaphoreTake(xTxMutex, portMAX_DELAY);
+	if (ex_safe) {
+		printex(string_to_print);
+		xSemaphoreTakeFromISR(xTxMutex, &xHigherTaskWoken);
+	} else {
+		print(string_to_print);
+		xSemaphoreTake(xTxMutex, portMAX_DELAY);
+	}
+
 	tx_buffer[0] = '\r';
 	tx_buffer[1] = '\n';
 	send(2);
+
+	return xHigherTaskWoken;
+}
+
+void ser_error_report::task(void) {
+	uint32_t error_data;
+
+	for(;;) {
+		xQueueReceive(error_queue, &error_data, portMAX_DELAY);
+
+		parent_interface->printnl("#FAULT");
+		parent_interface->print(" -> [");
+		parent_interface->print((uint16_t)((error_data >> 24) & 0xFF));
+		parent_interface->print(", ");
+		parent_interface->print((uint16_t)((error_data >> 16) & 0xFF));
+		parent_interface->print("]\t");
+		if (((error_data >> 8) & 0xFF) == 0x01)
+			parent_interface->print("OVC");
+		else parent_interface->print("UNK");
+		parent_interface->printnl("\r\n");
+		parent_interface->print(">> ");
+	}
 }

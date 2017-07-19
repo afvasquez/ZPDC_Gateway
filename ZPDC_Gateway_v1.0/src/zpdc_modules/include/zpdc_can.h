@@ -22,7 +22,8 @@
 #define CAN_MOTOR_PID_TUNE			(uint8_t)('G')
 #define CAN_MOTOR_PARAM_A			(uint8_t)('H')
 #define CAN_MOTOR_PARAM_B			(uint8_t)('I')
-	// Return Values
+#define CAN_MOTOR_STATREPA			(uint8_t)('J')
+// Return Values
 #define CAN_DISCOVERY_RETURN		(uint8_t)('a')
 #define CAN_ORDER_UPDATE_RETURN		(uint8_t)('b')
 #define CAN_REQUEST_LED_TOG_RETURN	(uint8_t)('c')
@@ -32,6 +33,7 @@
 #define CAN_MOTOR_PID_TUNE_RETURN	(uint8_t)('g')
 #define CAN_MOTOR_PARAM_A_RETURN	(uint8_t)('h')
 #define CAN_MOTOR_PARAM_B_RETURN	(uint8_t)('i')
+#define CAN_MOTOR_STATREPA_RETURN	(uint8_t)('j')
 	/******** QUEUE COMPRESSION CONSTANTS *******************************/
 #define CAN_QUEUE_COMMAND_DISCOVERY	((uint8_t) 1)
 #define CAN_QUEUE_COMMAND_ORDER		((uint8_t) 2)

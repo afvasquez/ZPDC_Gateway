@@ -210,6 +210,14 @@
 										&xHigherPriorityWoken);
 				}
 				break;
+				case CAN_MOTOR_STATREPA_RETURN:
+					uint32_t e_data = (uint32_t)((rx_element_fifo_0.data[1] << 24)|
+												 (rx_element_fifo_0.data[2] << 16)|
+												 (rx_element_fifo_0.data[3] << 8));
+					xQueueSendFromISR(eth0->eth_error_report.error_queue,
+										&e_data,
+										&xHigherPriorityWoken);
+				break;
 			}	
 		}
 	}

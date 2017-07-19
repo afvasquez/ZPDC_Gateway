@@ -39,6 +39,21 @@ const static CommandDictionary Commands[] = {
 /************************************************************************/
 
 class zpdc_sercom;
+class ser_ethernet;
+
+class ser_error_report : Task {
+public:
+	ser_error_report() {
+		error_queue = xQueueCreate(10, sizeof(uint32_t));
+				
+		t_init("ERR", 3, 1);
+	}
+
+	QueueHandle_t error_queue;
+	ser_ethernet *parent_interface;
+	void task(void);
+private:
+};
 
 class ser_ethernet : public Task, public zpdc_sercom , sercom_resource_manager
 {
@@ -69,9 +84,17 @@ public:
 		// I/O Functionality
 	SemaphoreHandle_t xTxMutex;
 	uint8_t rx_buffer_index;
+	ser_error_report eth_error_report;
+
 	void print(int16_t value);
+	BaseType_t printex(int16_t value);
+	BaseType_t print(int16_t value, bool ex_safe);
 	void print(const char* string_to_print);
+	BaseType_t printex(const char* string_to_print);
+	BaseType_t print(const char* string_to_print, bool ex_safe);
 	void printnl(const char* string_to_print);
+	BaseType_t printnlex(const char* string_to_print);
+	BaseType_t printnl(const char* string_to_print, bool ex_safe);
 
 		// Utility Methods
 	void setServiceId(uint8_t id) { service_id = id; }
